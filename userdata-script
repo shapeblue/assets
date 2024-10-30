@@ -1,0 +1,39 @@
+#!/bin/bash
+
+# Update packages and install Apache2
+apt update
+apt install -y apache2
+
+# Enable the CGI module for Apache
+a2enmod cgid
+
+# Modify the Apache configuration to enable ExecCGI and correct the directory
+sed -i '/<Directory \/var\/www\/>/!b;n;c\        Options Indexes FollowSymLinks ExecCGI' /etc/apache2/apache2.conf
+sed -i 's|<Directory /var/www/>|<Directory /var/www/html>|' /etc/apache2/apache2.conf
+
+# Modify the dir.conf file to set index.py as the DirectoryIndex
+sed -i 's/DirectoryIndex .*/DirectoryIndex index.py/' /etc/apache2/mods-available/dir.conf
+
+# Modify the mime.conf file to add support for Python scripts
+sed -i 's|#AddHandler cgi-script .cgi|AddHandler cgi-script .py|' /etc/apache2/mods-available/mime.conf
+
+# Remove the default index.html file
+rm -rf /var/www/html/index.html
+
+# Create the index.py script
+cat << EOF > /var/www/html/index.py
+#!/usr/bin/env python3
+import socket
+
+print('Content-type: text/html\n\n')
+print('<h1><p style="text-align: center;">Apache CloudStack Demo</p></h1>')
+print('<div style="text-align: center;"><img src="https://seeklogo.com/images/A/apache-cloudstack-logo-12DEA5F6A6-seeklogo.com.png" alt="CloudStack Logo" style="width:200px;"></div>')
+print('<h2><p style="text-align: center;"><strong> Instance: </strong>{}</p></h2>'.format(socket.gethostname()))
+EOF
+
+# Set permissions for the index.py script
+chmod 705 /var/www/html/index.py
+
+# Enable and start the Apache2 service
+systemctl enable --now apache2.service
+systemctl restart apache2.service
