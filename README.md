@@ -1,1 +1,1 @@
-Blog, video and marketing assets
+Blog, video and marketing public assets
